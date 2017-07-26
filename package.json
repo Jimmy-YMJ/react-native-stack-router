@@ -1,0 +1,19 @@
+{
+  "name": "react-native-stack-router",
+  "version": "1.0.0",
+  "description": "A react native stack router",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jimmy-YMJ",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "dependencies": {
+    "deep-equal": "^1.0.1",
+    "prop-types": "^15.5.10"
+  }
+}

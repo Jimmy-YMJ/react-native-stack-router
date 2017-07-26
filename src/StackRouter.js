@@ -1,0 +1,298 @@
+import React from 'react';
+import ElementRefUtil from './ElementRefUtil';
+import { Animated, I18nManager, Easing, Dimensions, StyleSheet, View, PanResponder } from 'react-native';
+import Page from './Page';
+import PropTypes from 'prop-types';
+
+const window = Dimensions.get('window');
+
+/**
+ * The max duration of the card animation in milliseconds after released gesture.
+ * The actual duration should be always less then that because the rest distance
+ * is always less then the full distance of the layout.
+ */
+const ANIMATION_DURATION = 500;
+
+/**
+ * The gesture distance threshold to trigger the back behavior. For instance,
+ * `1/2` means that moving greater than 1/2 of the width of the screen will
+ * trigger a back action
+ */
+const POSITION_THRESHOLD = window.width / 2;
+
+/**
+ * The threshold (in pixels) to start the gesture action.
+ */
+const RESPOND_THRESHOLD = 20;
+
+/**
+ * The distance of touch start from the edge of the screen where the gesture will be recognized
+ */
+const GESTURE_RESPONSE_DISTANCE_HORIZONTAL = 25;
+const GESTURE_RESPONSE_DISTANCE_VERTICAL = 135;
+
+export default class StackRouter extends ElementRefUtil {
+  constructor(props){
+    super(props);
+    this._gestureStartValue = 0;
+
+    this._rootPageCache = [];
+
+    // tracks if a touch is currently happening
+    this._isResponding = false;
+
+    this.state = {
+      pageStack: [this._createPageSpec(props.defaultPage.config, props.defaultPage.props)]
+    };
+
+    this._createPanHandler();
+  }
+
+  getChildContext() {
+    return {
+      pushPage: this._pushPage,
+      popPage: this._popPage,
+      removeSleptPage: this._removeSleptPage
+    };
+  }
+
+  _createPageSpec(pageConfig, pageProps){
+    if(pageConfig.isRoot){
+      let spec = this._rootPageCache.find((item, index, arrRef) => {
+        if(item.config.component === pageConfig.component){
+          arrRef.splice(index, 1);
+          return true;
+        }
+        return false;
+      });
+      if(spec){
+        spec.props = pageProps;
+        spec.animationValues.translateX.setValue(0);
+        spec.animationValues.translateY.setValue(0);
+        spec.animationValues.opacity.setValue(1);
+        if(spec.ref){
+          spec.ref.setPointerEvents('auto');
+          spec.ref.wakeUpPage();
+        }
+        return spec;
+      }
+    }
+    return {
+      timestamp: Date.now(),
+      ref: null,
+      config: pageConfig,
+      props: pageProps,
+      animationValues: {
+        translateX: new Animated.Value(pageConfig.isRoot ? 0 : window.width),
+        translateY: new Animated.Value(0),
+        opacity: new Animated.Value(1)
+      }
+    };
+  }
+
+  _createPage(pageSpec){
+    return <Page key={pageSpec.timestamp} animationValues={pageSpec.animationValues} pageConfig={pageSpec.config} pageProps={pageSpec.props} eleRef={ele => {pageSpec.ref = ele}}/>;
+  }
+
+  _pushPage = (pageConfig, pageProps) => {
+    let stack = this.state.pageStack;
+    // Disable the prev page
+    if(pageConfig.isRoot){
+      let prevRoot = this._getRootPage();
+      if(!prevRoot) return 0;
+      prevRoot.ref && prevRoot.ref.setPointerEvents('none');
+      prevRoot.ref && prevRoot.ref.sleepPage();
+      prevRoot.ref && prevRoot.animationValues.translateX.setValue(window.width);
+      this._rootPageCache.push(prevRoot);
+      stack = [this._createPageSpec(pageConfig, pageProps)];
+    }else{
+      let prevPage = this._getCurrentPage();
+      prevPage.ref && prevPage.ref.setPointerEvents('none');
+      prevPage.ref && prevPage.ref.sleepPage();
+      stack.push(this._createPageSpec(pageConfig, pageProps));
+    }
+
+    this.setState({ pageStack: stack }, () => {
+      if(this._isRootPage()) return void 0;
+      let currAnimation = this._currentAnimation();
+      Animated.timing(currAnimation.translateX, {
+        toValue: 0,
+        duration: ANIMATION_DURATION,
+        easing: Easing.linear(),
+        useNativeDriver: true
+      }).start();
+    });
+    return stack.length;
+  };
+
+  _removeSleptPage = (index) => {
+    if(index < 1) return false;
+    let stack = this.state.pageStack.splice(index, 1);
+    this.setState({ pageStack: stack });
+    return true;
+  };
+
+  _popPage = (duration) => {
+    duration = duration || ANIMATION_DURATION;
+    let stack = this.state.pageStack,
+      stackLen = stack.length;
+    if(stackLen <= 1) return 0;
+    let currAnimation = this._currentAnimation();
+    Animated.timing(currAnimation.translateX, {
+      toValue: window.width,
+      duration: duration,
+      easing: Easing.linear(),
+      useNativeDriver: true
+    }).start(() => {
+      this.setState({ pageStack: this.state.pageStack.slice(0, -1)});
+      this._getCurrentPage().ref.setPointerEvents('auto');
+      this._getCurrentPage().ref.wakeUpPage();
+    });
+    return stackLen - 1;
+  };
+
+  _resetPage(duration) {
+    let currAnimation = this._currentAnimation();
+    Animated.timing(currAnimation.translateX, {
+      toValue: 0,
+      duration: duration,
+      easing: Easing.linear(),
+      useNativeDriver: true
+    }).start(() => {
+      this._gestureStartValue = 0;
+    });
+  }
+
+  _getCurrentPage(){
+    return this.state.pageStack[this.state.pageStack.length - 1];
+  }
+
+  _getRootPage(){
+    return this.state.pageStack[0];
+  }
+
+  _isRootPage(){
+    return this.state.pageStack.length === 1;
+  }
+
+  _currentAnimation(){
+    return this._getCurrentPage().animationValues;
+  }
+
+  _createPanHandler(){
+    const isVertical = false;
+    this._panResponder = PanResponder.create({
+      onPanResponderTerminate: () => {
+        this._isResponding = false;
+        this._resetPage();
+      },
+      onPanResponderGrant: () => {
+        let currAnimation = this._currentAnimation();
+        (isVertical ? currAnimation.translateY : currAnimation.translateX).stopAnimation(() => {
+          this._isResponding = true;
+        });
+      },
+      onMoveShouldSetPanResponder: (event, gesture) => {
+        if(this._isRootPage() || this._isResponding) return false;
+        const currentDragDistance = gesture[isVertical ? 'dy' : 'dx'];
+        const currentDragPosition = event.nativeEvent[isVertical ? 'pageY' : 'pageX'];
+        const axisLength = isVertical ? window.height : window.width;
+        const axisHasBeenMeasured = !!axisLength;
+
+        // Measure the distance from the touch to the edge of the screen
+        const screenEdgeDistance = currentDragPosition - currentDragDistance;
+        // Compare to the gesture distance relavant to card or modal
+        const gestureResponseDistance = isVertical ? GESTURE_RESPONSE_DISTANCE_VERTICAL : GESTURE_RESPONSE_DISTANCE_HORIZONTAL;
+        // GESTURE_RESPONSE_DISTANCE is about 25 or 30. Or 135 for modals
+        if (screenEdgeDistance > gestureResponseDistance) {
+          // Reject touches that started in the middle of the screen
+          return false;
+        }
+
+        const hasDraggedEnough = Math.abs(currentDragDistance) > RESPOND_THRESHOLD;
+
+        return hasDraggedEnough && axisHasBeenMeasured;
+      },
+      onPanResponderMove: (event, gesture) => {
+        const startValue = this._gestureStartValue;
+        const axis = isVertical ? 'dy' : 'dx';
+        const currentValue = I18nManager.isRTL && axis === 'dx' ? gesture[axis] - startValue: startValue + gesture[axis];
+        let currAnimation = this._currentAnimation();
+        isVertical ? (currAnimation.translateY.setValue(currentValue)) : (currAnimation.translateX.setValue(currentValue));
+      },
+      onPanResponderTerminationRequest: () =>
+        // Returning false will prevent other views from becoming responder while
+        // the navigation view is the responder (mid-gesture)
+        false,
+      onPanResponderRelease: (event, gesture) => {
+        if (!this._isResponding) {
+          return;
+        }
+        this._isResponding = false;
+
+        // Calculate animate duration according to gesture speed and moved distance
+        const axisDistance = isVertical ? window.height : window.width;
+        const movedDistance = gesture[isVertical ? 'moveY' : 'moveX'];
+        const defaultVelocity = axisDistance / ANIMATION_DURATION;
+        const gestureVelocity = gesture[isVertical ? 'vy' : 'vx'];
+        const velocity = Math.max(gestureVelocity, defaultVelocity);
+        const resetDuration = movedDistance / velocity;
+        const goBackDuration = (axisDistance - movedDistance) / velocity;
+
+        // To asyncronously get the current animated value, we need to run stopAnimation:
+        let currAnimation = this._currentAnimation();
+        (isVertical ? currAnimation.translateY : currAnimation.translateX).stopAnimation(value => {
+          // If the speed of the gesture release is significant, use that as the indication
+          // of intent
+          if (gestureVelocity < -0.5) {
+            this._resetPage(resetDuration);
+            return;
+          }
+          if (gestureVelocity > 0.5) {
+            this._popPage(goBackDuration);
+            return;
+          }
+
+          // Then filter based on the distance the screen was moved. Over a third of the way swiped,
+          // and the back will happen.
+          if (value <= POSITION_THRESHOLD) {
+            this._resetPage(resetDuration);
+          } else {
+            this._popPage(goBackDuration);
+          }
+        });
+      }
+    });
+  }
+
+  render() {
+    return (
+      <View
+        style={styles.container} {...this._panResponder.panHandlers}>
+        {this._rootPageCache.concat(this.state.pageStack).map(pageSpec => this._createPage(pageSpec))}
+      </View>
+    );
+  }
+}
+
+StackRouter.propTypes = {
+  defaultPage: PropTypes.shape({
+    config: PropTypes.shape({
+      component: PropTypes.any
+    }).isRequired,
+    props: PropTypes.object
+  }).isRequired,
+};
+
+StackRouter.childContextTypes = {
+  pushPage: PropTypes.func.isRequired,
+  popPage: PropTypes.func.isRequired,
+  removeSleptPage: PropTypes.func.isRequired
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    position: 'relative'
+  }
+});
