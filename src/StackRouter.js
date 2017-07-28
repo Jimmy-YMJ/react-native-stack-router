@@ -45,6 +45,10 @@ export default class StackRouter extends Component {
       pageStack: [this._createPageSpec(props.defaultPage.config, props.defaultPage.props)]
     };
 
+    this._isPoping = false;
+
+    this._isPushing = false;
+
     this._createPanHandler();
   }
 
@@ -111,6 +115,8 @@ export default class StackRouter extends Component {
   }
 
   _pushPage = (pageConfig, pageProps, cb) => {
+    if(this._isPushing) return this._getStackLength();
+    this._isPushing = true;
     if(typeof pageProps === 'function'){
       cb = pageProps;
       pageProps = {};
@@ -124,7 +130,10 @@ export default class StackRouter extends Component {
         console.warn('root component must have an id');
       }
       let prevRoot = this._getRootPage();
-      if(!prevRoot || prevRoot.config.id === pageConfig.id) return 0;
+      if(!prevRoot || prevRoot.config.id === pageConfig.id){
+        this._isPushing = false;
+        return 1;
+      }
       prevRoot.ref && prevRoot.ref.setPointerEvents('none');
       prevRoot.ref && prevRoot.ref.sleepPage();
       prevRoot.ref && prevRoot.animationValues.translateX.setValue(window.width);
@@ -141,7 +150,8 @@ export default class StackRouter extends Component {
     this.setState({ pageStack: stack }, () => {
       if(this._isRootPage()) {
         cb(this._getStackLength());
-        return void 0;
+        this._isPushing = false;
+        return 1;
       }
       let currAnimation = this._currentAnimation();
       Animated.timing(currAnimation.translateX, {
@@ -151,6 +161,7 @@ export default class StackRouter extends Component {
         useNativeDriver: true
       }).start(() => {
         cb(this._getStackLength());
+        this._isPushing = false;
       });
     });
     return stack.length;
@@ -167,7 +178,12 @@ export default class StackRouter extends Component {
     return true;
   };
 
+  /**
+   * TODO: should stop pop when prev pop is uncompleted
+   * **/
   _popPage = (duration, cb) => {
+    if(this._isPoping) return this._getStackLength();
+    this._isPoping = true;
     if(typeof duration === 'function'){
       cb = duration;
       duration = ANIMATION_DURATION;
@@ -177,7 +193,10 @@ export default class StackRouter extends Component {
     duration = duration || ANIMATION_DURATION;
     let stack = this.state.pageStack,
       stackLen = stack.length;
-    if(stackLen <= 1) return 0;
+    if(stackLen <= 1){
+      this._isPoping = false;
+      return 1;
+    }
     let currAnimation = this._currentAnimation();
     Animated.timing(currAnimation.translateX, {
       toValue: window.width,
@@ -189,6 +208,7 @@ export default class StackRouter extends Component {
       this.setState({ pageStack: this.state.pageStack.slice(0, -1)});
       this._getCurrentPage().ref.setPointerEvents('auto');
       this._getCurrentPage().ref.wakeUpPage();
+      this._isPoping = false;
     });
     return stackLen - 1;
   };
