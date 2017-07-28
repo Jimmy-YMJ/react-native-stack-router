@@ -179,7 +179,7 @@ export default class StackRouter extends Component {
   };
 
   /**
-   * TODO: should stop pop when prev pop is uncompleted
+   * Should stop pop when prev pop is uncompleted
    * **/
   _popPage = (duration, cb) => {
     if(this._isPoping) return this._getStackLength();
