@@ -1,9 +1,9 @@
-import React from 'react';
-import ElementRefUtil from './ElementRefUtil';
+import React, { Component } from 'react';
 import { Animated, I18nManager, Easing, Dimensions, StyleSheet, View, PanResponder } from 'react-native';
 import Page from './Page';
 import PropTypes from 'prop-types';
 
+const emptyFunc = () => {};
 const window = Dimensions.get('window');
 
 /**
@@ -31,7 +31,7 @@ const RESPOND_THRESHOLD = 20;
 const GESTURE_RESPONSE_DISTANCE_HORIZONTAL = 25;
 const GESTURE_RESPONSE_DISTANCE_VERTICAL = 135;
 
-export default class StackRouter extends ElementRefUtil {
+export default class StackRouter extends Component {
   constructor(props){
     super(props);
     this._gestureStartValue = 0;
@@ -91,10 +91,16 @@ export default class StackRouter extends ElementRefUtil {
   }
 
   _createPage(pageSpec){
-    return <Page key={pageSpec.timestamp} animationValues={pageSpec.animationValues} pageConfig={pageSpec.config} pageProps={pageSpec.props} eleRef={ele => {pageSpec.ref = ele}}/>;
+    return <Page key={pageSpec.timestamp} animationValues={pageSpec.animationValues} pageConfig={pageSpec.config} pageProps={pageSpec.props} ref={ele => {pageSpec.ref = ele}}/>;
   }
 
-  _pushPage = (pageConfig, pageProps) => {
+  _pushPage = (pageConfig, pageProps, cb) => {
+    if(typeof pageProps === 'function'){
+      cb = pageProps;
+      pageProps = {};
+    }else{
+      cb = typeof cb === 'function' ? cb : emptyFunc;
+    }
     let stack = this.state.pageStack;
     // Disable the prev page
     if(pageConfig.isRoot){
@@ -113,16 +119,25 @@ export default class StackRouter extends ElementRefUtil {
     }
 
     this.setState({ pageStack: stack }, () => {
-      if(this._isRootPage()) return void 0;
+      if(this._isRootPage()) {
+        cb(this._getStackLength());
+        return void 0;
+      }
       let currAnimation = this._currentAnimation();
       Animated.timing(currAnimation.translateX, {
         toValue: 0,
         duration: ANIMATION_DURATION,
         easing: Easing.linear(),
         useNativeDriver: true
-      }).start();
+      }).start(() => {
+        cb(this._getStackLength());
+      });
     });
     return stack.length;
+  };
+
+  _getStackLength = () => {
+    return this.state.pageStack.length;
   };
 
   _removeSleptPage = (index) => {
@@ -132,7 +147,13 @@ export default class StackRouter extends ElementRefUtil {
     return true;
   };
 
-  _popPage = (duration) => {
+  _popPage = (duration, cb) => {
+    if(typeof duration === 'function'){
+      cb = duration;
+      duration = ANIMATION_DURATION;
+    }else{
+      cb = typeof cb === 'function' ? cb : emptyFunc;
+    }
     duration = duration || ANIMATION_DURATION;
     let stack = this.state.pageStack,
       stackLen = stack.length;
@@ -144,6 +165,7 @@ export default class StackRouter extends ElementRefUtil {
       easing: Easing.linear(),
       useNativeDriver: true
     }).start(() => {
+      cb(this._getStackLength());
       this.setState({ pageStack: this.state.pageStack.slice(0, -1)});
       this._getCurrentPage().ref.setPointerEvents('auto');
       this._getCurrentPage().ref.wakeUpPage();

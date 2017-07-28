@@ -1,10 +1,9 @@
-import React from 'react';
-import ElementRefUtil from './ElementRefUtil';
+import React, { Component } from 'react';
 import { Animated, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
 import deepEqual from 'deep-equal';
 
-export default class Page extends ElementRefUtil{
+export default class Page extends Component{
   constructor(props){
     super(props);
     this.state = {
@@ -36,13 +35,13 @@ export default class Page extends ElementRefUtil{
 
   sleepPage(){
     if(this._pageSlpet) return void 0;
-    this._pageSleepCallbacks = this._pageSleepCallbacks.filter(cb => cb());
+    this._pageSleepCallbacks = this._pageSleepCallbacks.filter(cb => cb() !== false );
     this._pageSlpet = true;
   }
 
   wakeUpPage(){
     if(!this._pageSlpet) return void 0;
-    this._pageWakeCallbacks = this._pageWakeCallbacks.filter(cb => cb());
+    this._pageWakeCallbacks = this._pageWakeCallbacks.filter(cb => cb() !== false );
     this._pageSlpet = false;
   }
 
