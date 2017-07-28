@@ -182,7 +182,7 @@ export default class StackRouter extends Component {
    * Should stop pop when prev pop is uncompleted
    * **/
   _popPage = (duration, cb) => {
-    if(this._isPoping) return this._getStackLength();
+    if(this._isPoping) return this._isRootPage() ? 0 : this._getStackLength();
     this._isPoping = true;
     if(typeof duration === 'function'){
       cb = duration;
@@ -195,7 +195,7 @@ export default class StackRouter extends Component {
       stackLen = stack.length;
     if(stackLen <= 1){
       this._isPoping = false;
-      return 1;
+      return this._isRootPage() ? 0 : 1;
     }
     let currAnimation = this._currentAnimation();
     Animated.timing(currAnimation.translateX, {
