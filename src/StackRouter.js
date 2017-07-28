@@ -56,15 +56,19 @@ export default class StackRouter extends Component {
     };
   }
 
+  _findRootSpec = (pageConfig) => {
+    let i = 0, len = this._rootPageCache.length, config;
+    for(; i < len; i ++){
+      config = this._rootPageCache[i].config;
+      if(config.id === pageConfig.id){
+        return this._rootPageCache.splice(i, 1)[0];
+      }
+    }
+  };
+
   _createPageSpec(pageConfig, pageProps){
     if(pageConfig.isRoot){
-      let spec = this._rootPageCache.find((item, index, arrRef) => {
-        if(item.config.component === pageConfig.component){
-          arrRef.splice(index, 1);
-          return true;
-        }
-        return false;
-      });
+      let spec = this._findRootSpec(pageConfig);
       if(spec){
         spec.props = pageProps;
         spec.animationValues.translateX.setValue(0);
@@ -104,8 +108,11 @@ export default class StackRouter extends Component {
     let stack = this.state.pageStack;
     // Disable the prev page
     if(pageConfig.isRoot){
+      if(__DEV__ && !pageConfig.id){
+        console.warn('Config of root component must have an id');
+      }
       let prevRoot = this._getRootPage();
-      if(!prevRoot) return 0;
+      if(!prevRoot || prevRoot.config.id === pageConfig.id) return 0;
       prevRoot.ref && prevRoot.ref.setPointerEvents('none');
       prevRoot.ref && prevRoot.ref.sleepPage();
       prevRoot.ref && prevRoot.animationValues.translateX.setValue(window.width);
