@@ -45,10 +45,6 @@ export default class StackRouter extends Component {
       pageStack: [this._createPageSpec(props.defaultPage.config, props.defaultPage.props)]
     };
 
-    this._isPoping = false;
-
-    this._isPushing = false;
-
     this._createPanHandler();
   }
 
@@ -115,8 +111,8 @@ export default class StackRouter extends Component {
   }
 
   _pushPage = (pageConfig, pageProps, cb) => {
-    if(this._isPushing) return this._getStackLength();
-    this._isPushing = true;
+    if(this._isResponding) return this._getStackLength();
+    this._isResponding = true;
     if(typeof pageProps === 'function'){
       cb = pageProps;
       pageProps = {};
@@ -131,7 +127,7 @@ export default class StackRouter extends Component {
       }
       let prevRoot = this._getRootPage();
       if(!prevRoot || prevRoot.config.id === pageConfig.id){
-        this._isPushing = false;
+        this._isResponding = false;
         return 1;
       }
       prevRoot.ref && prevRoot.ref.setPointerEvents('none');
@@ -150,7 +146,7 @@ export default class StackRouter extends Component {
     this.setState({ pageStack: stack }, () => {
       if(this._isRootPage()) {
         cb(this._getStackLength());
-        this._isPushing = false;
+        this._isResponding = false;
         return 1;
       }
       let currAnimation = this._currentAnimation();
@@ -161,7 +157,7 @@ export default class StackRouter extends Component {
         useNativeDriver: true
       }).start(() => {
         cb(this._getStackLength());
-        this._isPushing = false;
+        this._isResponding = false;
       });
     });
     return stack.length;
@@ -182,8 +178,8 @@ export default class StackRouter extends Component {
    * Should stop pop when prev pop is uncompleted
    * **/
   _popPage = (duration, cb) => {
-    if(this._isPoping) return this._isRootPage() ? 0 : this._getStackLength();
-    this._isPoping = true;
+    if(this._isResponding) return this._isRootPage() ? 0 : this._getStackLength();
+    this._isResponding = true;
     if(typeof duration === 'function'){
       cb = duration;
       duration = ANIMATION_DURATION;
@@ -194,9 +190,12 @@ export default class StackRouter extends Component {
     let stack = this.state.pageStack,
       stackLen = stack.length;
     if(stackLen <= 1){
-      this._isPoping = false;
+      this._isResponding = false;
       return this._isRootPage() ? 0 : 1;
     }
+    let nextSpec = this._getNextPage();
+    nextSpec.ref && nextSpec.ref.setPointerEvents('auto');
+    nextSpec.ref && nextSpec.ref.wakeUpPage();
     let currAnimation = this._currentAnimation();
     Animated.timing(currAnimation.translateX, {
       toValue: window.width,
@@ -206,9 +205,7 @@ export default class StackRouter extends Component {
     }).start(() => {
       cb(this._getStackLength());
       this.setState({ pageStack: this.state.pageStack.slice(0, -1)});
-      this._getCurrentPage().ref.setPointerEvents('auto');
-      this._getCurrentPage().ref.wakeUpPage();
-      this._isPoping = false;
+      this._isResponding = false;
     });
     return stackLen - 1;
   };
@@ -227,6 +224,10 @@ export default class StackRouter extends Component {
 
   _getCurrentPage(){
     return this.state.pageStack[this.state.pageStack.length - 1];
+  }
+
+  _getNextPage(){
+    return this.state.pageStack[this.state.pageStack.length - 2];
   }
 
   _getRootPage(){
