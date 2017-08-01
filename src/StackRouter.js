@@ -169,7 +169,8 @@ export default class StackRouter extends Component {
 
   _removeSleptPage = (index) => {
     if(index < 1) return false;
-    let stack = this.state.pageStack.splice(index, 1);
+    let stack = this.state.pageStack.slice();
+    stack.splice(index, 1);
     this.setState({ pageStack: stack });
     return true;
   };
