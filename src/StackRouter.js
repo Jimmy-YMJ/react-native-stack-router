@@ -330,10 +330,22 @@ export default class StackRouter extends Component {
   }
 
   render() {
+    let currentPage = this._getCurrentPage();
     return (
-      <View
-        style={styles.container} {...this._panResponder.panHandlers}>
-        {this._rootPageCache.concat(this.state.pageStack).map(pageSpec => this._createPage(pageSpec))}
+      <View style={styles.container} {...this._panResponder.panHandlers}>
+        <View style={styles.contentMain}>
+          {this._rootPageCache.concat(this.state.pageStack).map(pageSpec => this._createPage(pageSpec))}
+        </View>
+        {
+          this.props.footer && (
+            (currentPage.config.isRoot && currentPage.config.showHeader !== false) ||
+            (!currentPage.config.isRoot && currentPage.config.showHeader === true)
+          ) && (
+            <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: this.props.footerHeight }}>
+              {this.props.footer}
+            </View>
+          ) || null
+        }
       </View>
     );
   }
@@ -346,6 +358,13 @@ StackRouter.propTypes = {
     }).isRequired,
     props: PropTypes.object
   }).isRequired,
+  footer: PropTypes.element,
+  footerHeight: PropTypes.number
+};
+
+StackRouter.defaultProps = {
+  footer: null,
+  footerHeight: 45
 };
 
 StackRouter.childContextTypes = {
@@ -358,5 +377,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: 'relative'
+  },
+  contentMain: {
+    flex: 1,
   }
 });
