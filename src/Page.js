@@ -89,7 +89,6 @@ Page.childContextTypes = {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    zIndex: 1000,
     left: 0,
     top: 0,
     right: 0,

@@ -339,10 +339,10 @@ export default class StackRouter extends Component {
   render() {
     return (
       <View style={styles.container} {...this._panResponder.panHandlers}>
-        {this._rootPageCache.concat(this.state.pageStack).map(pageSpec => this._createPage(pageSpec))}
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: this.props.footerHeight }}>
           {this.props.footer}
         </View>
+        {this._rootPageCache.concat(this.state.pageStack).map(pageSpec => this._createPage(pageSpec))}
       </View>
     );
   }
