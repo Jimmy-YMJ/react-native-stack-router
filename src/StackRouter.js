@@ -106,8 +106,15 @@ export default class StackRouter extends Component {
     };
   }
 
+  _shouldDisplayFooter(pageSpec){
+    return !!this.props.footer && (
+        (pageSpec.config.isRoot === true && pageSpec.config.showHeader !== false) ||
+        (!pageSpec.config.isRoot !== true && pageSpec.config.showHeader === true)
+      );
+  }
+
   _createPage(pageSpec){
-    return <Page key={pageSpec.timestamp} animationValues={pageSpec.animationValues} pageConfig={pageSpec.config} pageProps={pageSpec.props} ref={ele => {pageSpec.ref = ele}}/>;
+    return <Page bottom={this._shouldDisplayFooter(pageSpec) ? this.props.footerHeight : 0} key={pageSpec.timestamp} animationValues={pageSpec.animationValues} pageConfig={pageSpec.config} pageProps={pageSpec.props} ref={ele => {pageSpec.ref = ele}}/>;
   }
 
   _pushPage = (pageConfig, pageProps, cb) => {
@@ -330,22 +337,12 @@ export default class StackRouter extends Component {
   }
 
   render() {
-    let currentPage = this._getCurrentPage();
     return (
       <View style={styles.container} {...this._panResponder.panHandlers}>
-        <View style={styles.contentMain}>
-          {this._rootPageCache.concat(this.state.pageStack).map(pageSpec => this._createPage(pageSpec))}
+        {this._rootPageCache.concat(this.state.pageStack).map(pageSpec => this._createPage(pageSpec))}
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: this.props.footerHeight }}>
+          {this.props.footer}
         </View>
-        {
-          this.props.footer && (
-            (currentPage.config.isRoot && currentPage.config.showHeader !== false) ||
-            (!currentPage.config.isRoot && currentPage.config.showHeader === true)
-          ) && (
-            <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: this.props.footerHeight }}>
-              {this.props.footer}
-            </View>
-          ) || null
-        }
       </View>
     );
   }
@@ -377,8 +374,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: 'relative'
-  },
-  contentMain: {
-    flex: 1,
   }
 });

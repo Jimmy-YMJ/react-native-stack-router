@@ -61,7 +61,7 @@ export default class Page extends Component{
     };
     return (
       <Animated.View
-        style={[styles.container, animationStyle]}
+        style={[styles.container, animationStyle, { bottom: this.props.bottom }]}
         pointerEvents={this.state.pointerEvents}
       >
         {React.createElement(this.props.pageConfig.component, this.props.pageProps)}
@@ -71,6 +71,7 @@ export default class Page extends Component{
 };
 
 Page.propTypes = {
+  bottom: PropTypes.number.isRequired,
   pageConfig: PropTypes.object,
   pageProps: PropTypes.any,
   animationValues: PropTypes.shape({
@@ -88,10 +89,10 @@ Page.childContextTypes = {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
+    zIndex: 1000,
     left: 0,
     top: 0,
     right: 0,
-    bottom: 0,
     backgroundColor: 'white'
   }
 });
