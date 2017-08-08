@@ -7,13 +7,6 @@ const emptyFunc = () => {};
 const window = Dimensions.get('window');
 
 /**
- * The max duration of the card animation in milliseconds after released gesture.
- * The actual duration should be always less then that because the rest distance
- * is always less then the full distance of the layout.
- */
-const ANIMATION_DURATION = 500;
-
-/**
  * The gesture distance threshold to trigger the back behavior. For instance,
  * `1/2` means that moving greater than 1/2 of the width of the screen will
  * trigger a back action
@@ -34,6 +27,7 @@ const GESTURE_RESPONSE_DISTANCE_VERTICAL = 135;
 export default class StackRouter extends Component {
   constructor(props){
     super(props);
+    this.footer = null;
     this._gestureStartValue = 0;
 
     this._rootPageCache = [];
@@ -154,12 +148,13 @@ export default class StackRouter extends Component {
       if(this._isRootPage()) {
         cb(this._getStackLength());
         this._isResponding = false;
+        this.footer && typeof this.footer.setCurrentPage === 'function' && this.footer.setCurrentPage(this._getRootPage().config.id);
         return 1;
       }
       let currAnimation = this._currentAnimation();
       Animated.timing(currAnimation.translateX, {
         toValue: 0,
-        duration: ANIMATION_DURATION,
+        duration: this.props.animationDuration,
         easing: Easing.linear(),
         useNativeDriver: true
       }).start(() => {
@@ -190,11 +185,11 @@ export default class StackRouter extends Component {
     this._isResponding = true;
     if(typeof duration === 'function'){
       cb = duration;
-      duration = ANIMATION_DURATION;
+      duration = this.props.animationDuration;
     }else{
       cb = typeof cb === 'function' ? cb : emptyFunc;
     }
-    duration = duration || ANIMATION_DURATION;
+    duration = duration || this.props.animationDuration;
     let stack = this.state.pageStack,
       stackLen = stack.length;
     if(stackLen <= 1){
@@ -304,7 +299,7 @@ export default class StackRouter extends Component {
         // Calculate animate duration according to gesture speed and moved distance
         const axisDistance = isVertical ? window.height : window.width;
         const movedDistance = gesture[isVertical ? 'moveY' : 'moveX'];
-        const defaultVelocity = axisDistance / ANIMATION_DURATION;
+        const defaultVelocity = axisDistance / this.props.animationDuration;
         const gestureVelocity = gesture[isVertical ? 'vy' : 'vx'];
         const velocity = Math.max(gestureVelocity, defaultVelocity);
         const resetDuration = movedDistance / velocity;
@@ -337,10 +332,11 @@ export default class StackRouter extends Component {
   }
 
   render() {
+    let footer = this.props.footer;
     return (
       <View style={styles.container} {...this._panResponder.panHandlers}>
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: this.props.footerHeight }}>
-          {this.props.footer}
+          {footer && React.createElement(footer.component, Object.assign({}, footer.props || {}, { ref: ref => this.footer = ref }))}
         </View>
         {this._rootPageCache.concat(this.state.pageStack).map(pageSpec => this._createPage(pageSpec))}
       </View>
@@ -349,17 +345,22 @@ export default class StackRouter extends Component {
 }
 
 StackRouter.propTypes = {
+  animationDuration: PropTypes.number.isRequired,
   defaultPage: PropTypes.shape({
     config: PropTypes.shape({
       component: PropTypes.any
     }).isRequired,
     props: PropTypes.object
   }).isRequired,
-  footer: PropTypes.element,
+  footer: PropTypes.shape({
+    component: PropTypes.func.isRequired,
+    props: PropTypes.any
+  }),
   footerHeight: PropTypes.number
 };
 
 StackRouter.defaultProps = {
+  animationDuration: 300,
   footer: null,
   footerHeight: 45
 };
