@@ -127,7 +127,8 @@ export default class StackRouter extends Component {
         console.warn('root component must have an id');
       }
       let prevRoot = this._getRootPage();
-      if(!prevRoot || prevRoot.config.id === pageConfig.id){
+      let currentPage = this._getCurrentPage();
+      if(!prevRoot || (this.props.refreshSame !== true && currentPage && currentPage.config.id === pageConfig.id)){
         this._isResponding = false;
         return 1;
       }
@@ -345,6 +346,7 @@ export default class StackRouter extends Component {
 }
 
 StackRouter.propTypes = {
+  refreshSame: PropTypes.bool,
   animationDuration: PropTypes.number.isRequired,
   defaultPage: PropTypes.shape({
     config: PropTypes.shape({
@@ -360,6 +362,7 @@ StackRouter.propTypes = {
 };
 
 StackRouter.defaultProps = {
+  refreshSame: false,
   animationDuration: 300,
   footer: null,
   footerHeight: 45
