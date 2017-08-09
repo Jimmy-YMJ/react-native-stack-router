@@ -197,9 +197,6 @@ export default class StackRouter extends Component {
       this._isResponding = false;
       return this._isRootPage() ? 0 : 1;
     }
-    let nextSpec = this._getNextPage();
-    nextSpec.ref && nextSpec.ref.setPointerEvents('auto');
-    nextSpec.ref && nextSpec.ref.wakeUpPage();
     let currAnimation = this._currentAnimation();
     Animated.timing(currAnimation.translateX, {
       toValue: window.width,
@@ -207,8 +204,12 @@ export default class StackRouter extends Component {
       easing: Easing.linear(),
       useNativeDriver: true
     }).start(() => {
-      cb(this._getStackLength());
-      this.setState({ pageStack: this.state.pageStack.slice(0, -1)});
+      this.setState({ pageStack: this.state.pageStack.slice(0, -1)}, () => {
+        let currPage = this._getCurrentPage();
+        currPage && currPage.ref && nextSpec.ref.setPointerEvents('auto');
+        currPage && currPage.ref && nextSpec.ref.wakeUpPage();
+        cb(this._getStackLength());
+      });
       this._isResponding = false;
     });
     return stackLen - 1;
