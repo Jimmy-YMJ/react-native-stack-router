@@ -80,10 +80,6 @@ export default class StackRouter extends Component {
         spec.animationValues.translateX.setValue(0);
         spec.animationValues.translateY.setValue(0);
         spec.animationValues.opacity.setValue(1);
-        if(spec.ref){
-          spec.ref.setPointerEvents('auto');
-          spec.ref.wakeUpPage();
-        }
         return spec;
       }
     }
@@ -146,6 +142,9 @@ export default class StackRouter extends Component {
     }
 
     this.setState({ pageStack: stack }, () => {
+      let currPage = this._getCurrentPage();
+      currPage && currPage.ref && currPage.ref.setPointerEvents('auto');
+      currPage && currPage.ref && currPage.ref.wakeUpPage();
       if(this._isRootPage()) {
         cb(this._getStackLength());
         this._isResponding = false;
@@ -206,8 +205,8 @@ export default class StackRouter extends Component {
     }).start(() => {
       this.setState({ pageStack: this.state.pageStack.slice(0, -1)}, () => {
         let currPage = this._getCurrentPage();
-        currPage && currPage.ref && nextSpec.ref.setPointerEvents('auto');
-        currPage && currPage.ref && nextSpec.ref.wakeUpPage();
+        currPage && currPage.ref && currPage.ref.setPointerEvents('auto');
+        currPage && currPage.ref && currPage.ref.wakeUpPage();
         cb(this._getStackLength());
       });
       this._isResponding = false;
