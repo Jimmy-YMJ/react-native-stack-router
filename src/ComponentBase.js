@@ -6,7 +6,7 @@ import timerMixin from 'react-timer-mixin';
 export default class ComponentBase extends Component{
   constructor(props){
     super(props);
-    checkWrapperUsage(this);
+    checkWrapperUsage(this, props);
   }
 }
 

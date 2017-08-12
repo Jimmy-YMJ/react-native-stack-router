@@ -1,4 +1,4 @@
-export default function (instance) {
+export default function (instance, props) {
   if(__DEV__ === true){
     setTimeout(() => {
       let componentName = instance.constructor.name;
