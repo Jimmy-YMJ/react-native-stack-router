@@ -4,12 +4,28 @@ import PropTypes from 'prop-types';
 import deepEqual from 'deep-equal';
 
 export default class Page extends Component{
+  static propTypes = {
+    bottom: PropTypes.number.isRequired,
+    pageConfig: PropTypes.object,
+    pageProps: PropTypes.any,
+    animationValues: PropTypes.shape({
+      translateX: PropTypes.instanceOf(Animated.Value),
+      translateY: PropTypes.instanceOf(Animated.Value),
+      opacity: PropTypes.instanceOf(Animated.Value)
+    })
+  };
+
+  static childContextTypes = {
+    onPageSleep: PropTypes.func.isRequired,
+    onPageWake: PropTypes.func.isRequired
+  };
+
   constructor(props){
     super(props);
     this.state = {
       pointerEvents: 'auto'
     };
-    this._pageSlpet = false;
+    this._pageSlpet = true;
     this._pageSleepCallbacks = [];
     this._pageWakeCallbacks = [];
   }
@@ -18,7 +34,7 @@ export default class Page extends Component{
     return !(
       this.props.pageConfig.component === nextProps.pageConfig.component &&
       deepEqual(this.props.pageProps, nextProps.pageProps) &&
-        deepEqual(this.state, nextState)
+      deepEqual(this.state, nextState)
     );
   }
 
@@ -64,26 +80,10 @@ export default class Page extends Component{
         style={[styles.container, animationStyle, { bottom: this.props.bottom }]}
         pointerEvents={this.state.pointerEvents}
       >
-        {React.createElement(this.props.pageConfig.component, this.props.pageProps)}
+        {React.createElement(this.props.pageConfig.component, Object.assign({ isStackRouterPage: true }, this.props.pageProps || {}))}
       </Animated.View>
     );
   }
-};
-
-Page.propTypes = {
-  bottom: PropTypes.number.isRequired,
-  pageConfig: PropTypes.object,
-  pageProps: PropTypes.any,
-  animationValues: PropTypes.shape({
-    translateX: PropTypes.instanceOf(Animated.Value),
-    translateY: PropTypes.instanceOf(Animated.Value),
-    opacity: PropTypes.instanceOf(Animated.Value)
-  })
-};
-
-Page.childContextTypes = {
-  onPageSleep: PropTypes.func.isRequired,
-  onPageWake: PropTypes.func.isRequired
 };
 
 const styles = StyleSheet.create({

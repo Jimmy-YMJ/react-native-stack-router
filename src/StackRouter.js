@@ -25,6 +25,35 @@ const GESTURE_RESPONSE_DISTANCE_HORIZONTAL = 25;
 const GESTURE_RESPONSE_DISTANCE_VERTICAL = 135;
 
 export default class StackRouter extends Component {
+  static propTypes = {
+    refreshSame: PropTypes.bool,
+    animationDuration: PropTypes.number.isRequired,
+    defaultPage: PropTypes.shape({
+      config: PropTypes.shape({
+        component: PropTypes.any
+      }).isRequired,
+      props: PropTypes.object
+    }).isRequired,
+    footer: PropTypes.shape({
+      component: PropTypes.func.isRequired,
+      props: PropTypes.any
+    }),
+    footerHeight: PropTypes.number
+  };
+
+  static defaultProps = {
+    refreshSame: false,
+    animationDuration: 300,
+    footer: null,
+    footerHeight: 45
+  };
+
+  static childContextTypes = {
+    pushPage: PropTypes.func.isRequired,
+    popPage: PropTypes.func.isRequired,
+    removeSleptPage: PropTypes.func.isRequired
+  };
+
   constructor(props){
     super(props);
     this.footer = null;
@@ -122,16 +151,18 @@ export default class StackRouter extends Component {
       if(__DEV__ && !pageConfig.id){
         console.warn('root component must have an id');
       }
-      let prevRoot = this._getRootPage();
       let currentPage = this._getCurrentPage();
-      if(!prevRoot || (this.props.refreshSame !== true && currentPage && currentPage.config.id === pageConfig.id)){
+      if(currentPage.isRoot && currentPage.id === pageConfig.id){
         this._isResponding = false;
         return 1;
       }
-      prevRoot.ref && prevRoot.ref.setPointerEvents('none');
-      prevRoot.ref && prevRoot.ref.sleepPage();
-      prevRoot.ref && prevRoot.animationValues.translateX.setValue(window.width);
-      this._rootPageCache.push(prevRoot);
+      let prevRoot = this._getRootPage();
+      if(prevRoot){
+        prevRoot.ref && prevRoot.ref.setPointerEvents('none');
+        prevRoot.ref && prevRoot.ref.sleepPage();
+        prevRoot.ref && prevRoot.animationValues.translateX.setValue(window.width);
+        this._rootPageCache.push(prevRoot);
+      }
       stack = [this._createPageSpec(pageConfig, pageProps)];
     }else{
       let prevPage = this._getCurrentPage();
@@ -142,10 +173,10 @@ export default class StackRouter extends Component {
     }
 
     this.setState({ pageStack: stack }, () => {
-      let currPage = this._getCurrentPage();
-      currPage && currPage.ref && currPage.ref.setPointerEvents('auto');
-      currPage && currPage.ref && currPage.ref.wakeUpPage();
       if(this._isRootPage()) {
+        let currPage = this._getCurrentPage();
+        currPage.ref && currPage.ref.setPointerEvents('auto');
+        currPage.ref && currPage.ref.wakeUpPage();
         cb(this._getStackLength());
         this._isResponding = false;
         this.footer && typeof this.footer.setCurrentPage === 'function' && this.footer.setCurrentPage(this._getRootPage().config.id);
@@ -158,6 +189,9 @@ export default class StackRouter extends Component {
         easing: Easing.linear(),
         useNativeDriver: true
       }).start(() => {
+        let currPage = this._getCurrentPage();
+        currPage.ref && currPage.ref.setPointerEvents('auto');
+        currPage.ref && currPage.ref.wakeUpPage();
         cb(this._getStackLength());
         this._isResponding = false;
       });
@@ -344,35 +378,6 @@ export default class StackRouter extends Component {
     );
   }
 }
-
-StackRouter.propTypes = {
-  refreshSame: PropTypes.bool,
-  animationDuration: PropTypes.number.isRequired,
-  defaultPage: PropTypes.shape({
-    config: PropTypes.shape({
-      component: PropTypes.any
-    }).isRequired,
-    props: PropTypes.object
-  }).isRequired,
-  footer: PropTypes.shape({
-    component: PropTypes.func.isRequired,
-    props: PropTypes.any
-  }),
-  footerHeight: PropTypes.number
-};
-
-StackRouter.defaultProps = {
-  refreshSame: false,
-  animationDuration: 300,
-  footer: null,
-  footerHeight: 45
-};
-
-StackRouter.childContextTypes = {
-  pushPage: PropTypes.func.isRequired,
-  popPage: PropTypes.func.isRequired,
-  removeSleptPage: PropTypes.func.isRequired
-};
 
 const styles = StyleSheet.create({
   container: {

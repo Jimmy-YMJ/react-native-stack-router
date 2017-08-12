@@ -1,2 +1,7 @@
 import StackRouter from './src/StackRouter';
-module.exports = StackRouter;
+import StackAwareWrapper from './src/StackAwareWrapper';
+
+module.exports = {
+  StackRouter: StackRouter,
+  StackAwareWrapper: StackAwareWrapper
+};
