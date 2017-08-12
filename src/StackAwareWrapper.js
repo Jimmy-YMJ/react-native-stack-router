@@ -9,8 +9,7 @@ export default function (ComponentClass) {
       /**
        * Used by none page component
        * **/
-      stackRouterPageMounted: PropTypes.bool,
-      stackRouterPageWillUnmount: PropTypes.bool
+      stackRouterPageStatus: PropTypes.object
     };
     static displayName = `StackAwareWrapper:${ComponentClass.displayName || ComponentClass.name || 'unknown'}`;
 
@@ -18,8 +17,7 @@ export default function (ComponentClass) {
      * For none page component
      * **/
     static childContextTypes = {
-      stackRouterPageMounted: PropTypes.bool,
-      stackRouterPageWillUnmount: PropTypes.bool
+      stackRouterPageStatus: PropTypes.object
     };
 
     constructor(props, context){
@@ -27,6 +25,7 @@ export default function (ComponentClass) {
       this.componentEle = null;
       context.onPageSleep(this._clear);
       context.onPageWake(this._init);
+      this.stackRouterPageStatus = {};
     }
 
     /**
@@ -34,8 +33,7 @@ export default function (ComponentClass) {
      * **/
     getChildContext() {
       return {
-        stackRouterPageMounted: this.stackRouterPageMounted === true,
-        stackRouterPageWillUnmount: this.stackRouterPageWillUnmount === true
+        stackRouterPageStatus: this.stackRouterPageStatus
       };
     }
 
@@ -59,20 +57,20 @@ export default function (ComponentClass) {
 
     componentDidMount(){
       if(this.props.isStackRouterPage){
-        this.stackRouterPageMounted = true;
+        this.stackRouterPageStatus.didMount = true;
         return void 0;
       }
-      if(this.context.stackRouterPageMounted){
+      if(this.context.stackRouterPageStatus.didMount){
         this._init();
       }
     }
 
     componentWillUnmount(){
       if(this.props.isStackRouterPage){
-        this.stackRouterPageWillUnmount = true;
+        this.stackRouterPageStatus.willUnmount = true;
         return void 0;
       }
-      if(this.context.stackRouterPageWillUnmount) return void 0;
+      if(this.context.stackRouterPageStatus.willUnmount) return void 0;
       this._clear();
     }
     render(){
