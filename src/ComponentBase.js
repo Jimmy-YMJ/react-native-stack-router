@@ -3,11 +3,11 @@ import checkWrapperUsage from './utils/checkWrapperUsage';
 import reactMixin from 'react-mixin';
 import timerMixin from 'react-timer-mixin';
 
-class ComponentBase extends Component{
+export default class ComponentBase extends Component{
   constructor(props){
     super(props);
     checkWrapperUsage(this);
   }
 }
 
-export default reactMixin(ComponentBase.prototype, timerMixin);
+reactMixin(ComponentBase.prototype, timerMixin);
