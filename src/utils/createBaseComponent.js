@@ -1,13 +1,15 @@
 const GLOBAL = typeof window === 'undefined' ? global : window;
+const TIMER_TYPES = {
+  TIMEOUT: 'TIMEOUT',
+  INTERVAL: 'INTERVAL',
+  IMMEDIATE: 'IMMEDIATE',
+  ANIMATION_FRAME: 'ANIMATION_FRAME'
+};
+
 
 export default function (Component) {
   return class ComponentBase extends Component {
-    static TIMER_TYPES = {
-      TIMEOUT: '',
-      INTERVAL: '',
-      IMMEDIATE: '',
-      ANIMATION_FRAME: ''
-    };
+    static TIMER_TYPES = TIMER_TYPES;
     constructor(props) {
       super(props);
       this._intervalTimers = [];
@@ -68,8 +70,7 @@ export default function (Component) {
     }
 
     _clearAllTimers(timerTypes){
-      const TIMER_TYPES = ComponentBase.TIMER_TYPES;
-      (Array.isArray(timerTypes) ? timerTypes : TIMER_TYPES).forEach(timerType => {
+      (Array.isArray(timerTypes) ? timerTypes : Object.keys(TIMER_TYPES)).forEach(timerType => {
         switch (timerType){
           case TIMER_TYPES.INTERVAL:
             this._intervalTimers.forEach(timerId => GLOBAL.clearInterval(timerId));
