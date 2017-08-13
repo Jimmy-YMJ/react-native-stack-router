@@ -69,6 +69,10 @@ export default function (Component) {
       return GLOBAL.cancelAnimationFrame(timerId);
     }
 
+    clearAllTimers(){
+      this._clearAllTimers.apply(this, arguments);
+    }
+
     _clearAllTimers(timerTypes){
       (Array.isArray(timerTypes) ? timerTypes : Object.keys(TIMER_TYPES)).forEach(timerType => {
         switch (timerType){
