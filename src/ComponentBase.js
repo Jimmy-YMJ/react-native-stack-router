@@ -1,13 +1,3 @@
 import { Component } from 'react';
-import checkWrapperUsage from './utils/checkWrapperUsage';
-import reactMixin from 'react-mixin';
-import timerMixin from 'react-timer-mixin';
-
-export default class ComponentBase extends Component{
-  constructor(props){
-    super(props);
-    checkWrapperUsage(this, props);
-  }
-}
-
-reactMixin(ComponentBase.prototype, timerMixin);
+import createBaseComponent from './utils/createBaseComponent';
+export default createBaseComponent(Component);

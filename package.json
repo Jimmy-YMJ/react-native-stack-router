@@ -14,8 +14,6 @@
   },
   "dependencies": {
     "deep-equal": "^1.0.1",
-    "prop-types": "^15.5.10",
-    "react-mixin": "^3.0.5",
-    "react-timer-mixin": "^0.13.3"
+    "prop-types": "^15.5.10"
   }
 }

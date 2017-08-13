@@ -1,13 +1,3 @@
 import { PureComponent } from 'react';
-import checkWrapperUsage from './utils/checkWrapperUsage';
-import reactMixin from 'react-mixin';
-import timerMixin from 'react-timer-mixin';
-
-export default class PureComponentBase extends PureComponent{
-  constructor(props){
-    super(props);
-    checkWrapperUsage(this, props);
-  }
-}
-
-reactMixin(PureComponentBase.prototype, timerMixin);
+import createBaseComponent from './utils/createBaseComponent';
+export default createBaseComponent(PureComponent);

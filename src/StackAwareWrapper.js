@@ -49,8 +49,9 @@ export default function (ComponentClass) {
     };
 
     _clear = () => {
-      if(this._isComponentAvailable() && typeof this.componentEle._clear === 'function'){
-        return this.componentEle._clear();
+      if(this._isComponentAvailable()){
+        typeof this.componentEle._clearAllTimers === 'function' && this.componentEle._clearAllTimers();
+        if(typeof this.componentEle._clear === 'function') return this.componentEle._clear();
       }
       return true;
     };
