@@ -152,7 +152,7 @@ export default class StackRouter extends Component {
         console.warn('root component must have an id');
       }
       let currentPage = this._getCurrentPage();
-      if(currentPage.isRoot && currentPage.id === pageConfig.id){
+      if(currentPage.config.isRoot && currentPage.config.id === pageConfig.id){
         this._isResponding = false;
         return 1;
       }
