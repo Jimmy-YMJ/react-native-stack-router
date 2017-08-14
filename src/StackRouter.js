@@ -156,10 +156,13 @@ export default class StackRouter extends Component {
         this._isResponding = false;
         return 1;
       }
+      // Disable and sleep all pages
+      this.state.pageStack.forEach(page => {
+        page.ref && page.ref.setPointerEvents('none');
+        page.ref && page.ref.sleepPage();
+      });
       let prevRoot = this._getRootPage();
       if(prevRoot){
-        prevRoot.ref && prevRoot.ref.setPointerEvents('none');
-        prevRoot.ref && prevRoot.ref.sleepPage();
         prevRoot.ref && prevRoot.animationValues.translateX.setValue(window.width);
         this._rootPageCache.push(prevRoot);
       }
