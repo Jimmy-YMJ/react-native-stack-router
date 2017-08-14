@@ -212,7 +212,7 @@ export default class StackRouter extends Component {
   };
 
   /**
-   * Should stop pop when prev pop is uncompleted
+   * Should prevent pop when prev pop is uncompleted
    * **/
   _popPage = (duration, cb) => {
     if(this._isResponding) return this._isRootPage() ? 0 : this._getStackLength();
@@ -230,6 +230,9 @@ export default class StackRouter extends Component {
       this._isResponding = false;
       return this._isRootPage() ? 0 : 1;
     }
+    let currentPage = this._getCurrentPage();
+    currentPage.ref && currentPage.ref.setPointerEvents('none');
+    currentPage.ref && currentPage.ref.sleepPage();
     let currAnimation = this._currentAnimation();
     Animated.timing(currAnimation.translateX, {
       toValue: window.width,
