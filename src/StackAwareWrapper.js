@@ -33,7 +33,7 @@ export default function (ComponentClass) {
      * **/
     getChildContext() {
       return {
-        stackRouterPageStatus: this.stackRouterPageStatus
+        stackRouterPageStatus: this.props.isStackRouterPage ? this.stackRouterPageStatus : this.context.stackRouterPageStatus
       };
     }
 
