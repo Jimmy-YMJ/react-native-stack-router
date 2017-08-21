@@ -127,8 +127,8 @@ export default class StackRouter extends Component {
 
   _shouldDisplayFooter(pageSpec){
     return !!this.props.footer && (
-        (pageSpec.config.isRoot === true && pageSpec.config.showHeader !== false) ||
-        (!pageSpec.config.isRoot !== true && pageSpec.config.showHeader === true)
+        (pageSpec.config.isRoot === true && pageSpec.config.showFooter !== false) ||
+        (!pageSpec.config.isRoot !== true && pageSpec.config.showFooter === true)
       );
   }
 
@@ -216,7 +216,7 @@ export default class StackRouter extends Component {
 
   /**
    * Should prevent pop when prev pop is uncompleted
-   * **/
+   */
   _popPage = (duration, cb) => {
     if(this._isResponding) return this._isRootPage() ? 0 : this._getStackLength();
     this._isResponding = true;
