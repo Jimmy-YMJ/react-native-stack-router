@@ -75,7 +75,10 @@ export default function (ComponentClass) {
       this._clear();
     }
     render(){
-      return <ComponentClass ref={ ele => this.componentEle = ele } {...this.props} __isWrapped={true}/>;
+      return <ComponentClass ref={ele => {
+        this.componentEle = ele;
+        typeof this.props.eleRef === "function" && this.props.eleRef(ele);
+      }} {...this.props} __isWrapped={true}/>;
     }
   }
 
