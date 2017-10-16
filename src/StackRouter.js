@@ -186,18 +186,27 @@ export default class StackRouter extends Component {
         return 1;
       }
       let currAnimation = this._currentAnimation();
-      Animated.timing(currAnimation.translateX, {
-        toValue: 0,
-        duration: this.props.animationDuration,
-        easing: Easing.linear(),
-        useNativeDriver: true
-      }).start(() => {
+      if(currPage.config.animation === false){
+        currAnimation.translateX.setValue(0);
         let currPage = this._getCurrentPage();
         currPage.ref && currPage.ref.setPointerEvents('auto');
         currPage.ref && currPage.ref.wakeUpPage();
         cb(this._getStackLength());
         this._isResponding = false;
-      });
+      }else{
+        Animated.timing(currAnimation.translateX, {
+          toValue: 0,
+          duration: this.props.animationDuration,
+          easing: Easing.linear(),
+          useNativeDriver: true
+        }).start(() => {
+          let currPage = this._getCurrentPage();
+          currPage.ref && currPage.ref.setPointerEvents('auto');
+          currPage.ref && currPage.ref.wakeUpPage();
+          cb(this._getStackLength());
+          this._isResponding = false;
+        });
+      }
     });
     return stack.length;
   };
@@ -237,12 +246,8 @@ export default class StackRouter extends Component {
     currentPage.ref && currentPage.ref.setPointerEvents('none');
     currentPage.ref && currentPage.ref.sleepPage();
     let currAnimation = this._currentAnimation();
-    Animated.timing(currAnimation.translateX, {
-      toValue: window.width,
-      duration: duration,
-      easing: Easing.linear(),
-      useNativeDriver: true
-    }).start(() => {
+    if(currentPage.config.animation = false){
+      currAnimation.translateX.setValue(window.width);
       this.setState({ pageStack: this.state.pageStack.slice(0, -1)}, () => {
         let currPage = this._getCurrentPage();
         currPage && currPage.ref && currPage.ref.setPointerEvents('auto');
@@ -250,7 +255,22 @@ export default class StackRouter extends Component {
         cb(this._getStackLength());
       });
       this._isResponding = false;
-    });
+    }else {
+      Animated.timing(currAnimation.translateX, {
+        toValue: window.width,
+        duration: duration,
+        easing: Easing.linear(),
+        useNativeDriver: true
+      }).start(() => {
+        this.setState({ pageStack: this.state.pageStack.slice(0, -1)}, () => {
+          let currPage = this._getCurrentPage();
+          currPage && currPage.ref && currPage.ref.setPointerEvents('auto');
+          currPage && currPage.ref && currPage.ref.wakeUpPage();
+          cb(this._getStackLength());
+        });
+        this._isResponding = false;
+      });
+    }
     return stackLen - 1;
   };
 
@@ -300,7 +320,7 @@ export default class StackRouter extends Component {
         });
       },
       onMoveShouldSetPanResponder: (event, gesture) => {
-        if(this._isRootPage() || this._isResponding) return false;
+        if(this._isRootPage() || this._isResponding || this._getCurrentPage().config.animation === false) return false;
         const currentDragDistance = gesture[isVertical ? 'dy' : 'dx'];
         const currentDragPosition = event.nativeEvent[isVertical ? 'pageY' : 'pageX'];
         const axisLength = isVertical ? window.height : window.width;
