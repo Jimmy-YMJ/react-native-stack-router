@@ -176,8 +176,8 @@ export default class StackRouter extends Component {
     }
 
     this.setState({ pageStack: stack }, () => {
+      let currPage = this._getCurrentPage();
       if(this._isRootPage()) {
-        let currPage = this._getCurrentPage();
         currPage.ref && currPage.ref.setPointerEvents('auto');
         currPage.ref && currPage.ref.wakeUpPage();
         cb(this._getStackLength());

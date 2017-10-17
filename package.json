@@ -1,6 +1,6 @@
 {
   "name": "react-native-stack-router",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A react native stack router",
   "main": "index.js",
   "scripts": {
